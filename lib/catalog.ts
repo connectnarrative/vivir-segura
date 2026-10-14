@@ -1,5 +1,14 @@
 import media from './media.json';
-export const CONTACT={name:'Alejandro Henao',phone:'+1 416 825 4334',whatsapp:'14168254334',email:'alejandro@cartagena-connect.com'};
+// Set a verified international contact in the Vercel environment before switching the public adviser.
+const leonardoConfigured = (process.env.NEXT_PUBLIC_VIVIR_SEGURA_LEONARDO_PHONE ?? '').trim();
+const leonardoE164 = leonardoConfigured.replace(/[\s()-]/g, '');
+const useLeonardo = /^\+[1-9]\d{7,14}$/.test(leonardoE164);
+export const CONTACT = {
+  name: useLeonardo ? 'Leonardo' : 'Alejandro Henao',
+  phone: useLeonardo ? leonardoConfigured : '+1 416 825 4334',
+  whatsapp: useLeonardo ? leonardoE164.substring(1) : '14168254334',
+  email: 'alejandro@cartagena-connect.com'
+};
 export const ORIGIN='https://vivir-segura.vercel.app';
 export type Property={id:string;slug:string;name:string;type:string;location:string;city:string;price:number|null;currency:'COP'|'USD';area:number;built?:number;beds:number;baths:number;parking?:number;admin?:number;service?:boolean;levels?:number;coords?:[number,number];approx?:boolean;images:string[];story:string;storyEn:string;features:string[];featuresEn:string[];status:string;tag:string;tagEn:string;internalNotes?:string;owner?:string;commission?:number};
 export const properties:Property[]=[
@@ -9,6 +18,6 @@ export const properties:Property[]=[
 ];
 export function price(p:Property,en=false){return p.price===null?(en?'Price upon request':'Precio a consultar'):(p.currency==='USD'?'US$':'$')+new Intl.NumberFormat(en?'en-US':'es-CO').format(p.price)+(p.currency==='COP'?' COP':'');}
 export function whatsapp(message:string){return 'https://wa.me/'+CONTACT.whatsapp+'?text='+encodeURIComponent(message)}
-export function propertyMessage(p:Property,url=ORIGIN+'/propiedades/'+p.slug){return `Hola Alejandro, me interesa ${p.id} ${p.name}. ¿Podrías enviarme más información?\n${url}`}
+export function propertyMessage(p:Property,url=ORIGIN+'/propiedades/'+p.slug){return `Hola ${CONTACT.name}, me interesa ${p.id} ${p.name}. ¿Podrías enviarme más información?\n${url}`}
 export function publicProperty(p:Property){const {internalNotes,owner,commission,...safe}=p;return safe}
 export function parseQuery(query:string){const q=query.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');let type='';if(/apart|apartment/.test(q))type='Apartamento';else if(/finca|farm/.test(q))type='Finca';else if(/tierra|terreno|lote|land/.test(q))type='Tierra';else if(/casa|home|house/.test(q))type='Casa';else if(/inver|invest/.test(q))type='Inversión';let location='';if(q.includes('bocagrande'))location='Bocagrande';else if(/centro|historic/.test(q))location='Centro';else if(q.includes('arjona'))location='Arjona';else if(q.includes('cartagena'))location='Cartagena';const max=q.match(/(?:menos de|under|hasta|presupuesto|budget)\s*\$?\s*([\d.,]+)\s*(millones|million|mil)?/);let budget=max?Number(max[1].replace(/,/g,'.'))*(/mill/.test(max[2]||'')?1e6:max[2]==='mil'?1e3:1):0;const beds=q.match(/(\d+)\s*(?:alcobas|habitaciones|bedrooms)/);const ha=q.match(/(\d+(?:[.,]\d+)?)\s*(?:hectarea|hectare|ha\b)/);if(/cerca|near/.test(q)&&location==='Cartagena'&&(type==='Finca'||type==='Tierra'))location='';return{type,location,max:budget,beds:beds?+beds[1]:0,minArea:ha?+ha[1].replace(',','.')*10000:0,pool:/piscina|pool/.test(q)}};
